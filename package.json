@@ -1,0 +1,14 @@
+{
+  "name": "byteball-investors-attestation-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/temikng/byteball-investors-attestation-bot.git",
+  "author": "temikn <temikng@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "byteballcore": "git+https://github.com/byteball/byteballcore.git",
+    "headless-byteball": "git+https://github.com/byteball/headless-byteball.git",
+    "byteball-witness": "git+https://github.com/byteball/byteball-witness.git",
+    "request": "2.83.0"
+  }
+}
