@@ -6,9 +6,10 @@
   "author": "temikn <temikng@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "byteballcore": "git+https://github.com/byteball/byteballcore.git",
-    "headless-byteball": "git+https://github.com/byteball/headless-byteball.git",
     "byteball-witness": "git+https://github.com/byteball/byteball-witness.git",
+    "byteballcore": "git+https://github.com/byteball/byteballcore.git",
+    "emailjs": "2.0.0",
+    "headless-byteball": "git+https://github.com/byteball/headless-byteball.git",
     "request": "2.83.0"
   }
 }

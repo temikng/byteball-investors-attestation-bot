@@ -1,4 +1,3 @@
-
 /*jslint node: true */
 "use strict";
 exports.port = null;
@@ -34,14 +33,15 @@ exports.THRESHOLD_DISTANCE = 20;
 exports.MIN_AVAILABLE_WITNESSINGS = 100;
 
 // verify investor
-exports.verifyInvestorUri = 'https://verifyinvestor.com';
-exports.verifyInvestorToken = '';
+exports.verifyInvestorUrl = 'https://verifyinvestor.com';
+exports.verifyInvestorApiToken = '';
+exports.verifyInvestorUserAuthorizationToken = '';
 
 exports.priceInUSD = 8;
 exports.rewardInUSD = 20;
 exports.referralRewardInUSD = 20;
 
+exports.PRICE_TIMEOUT = 3600; // in seconds
+
 // set this in conf.json
 exports.salt = null;
-
-exports.webPort = 8080;
