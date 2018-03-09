@@ -107,14 +107,14 @@ function checkAuthAndPostVerificationRequest(transaction_id, device_address, use
 	});
 }
 
-exports.retryCheckVerificationRequests = () => {
+exports.retryCheckVerificationRequests = (onDone) => {
 	db.query(
 		`SELECT transaction_id, device_address, vi_user_id, vi_vr_id
 		FROM transactions JOIN receiving_addresses USING(receiving_address)
 		WHERE vi_status = 1`,
 		(rows) => {
 			rows.forEach((row) => {
-				checkUserVerificationRequest(row.transaction_id, row.device_address, row.vi_user_id, row.vi_vr_id);
+				checkUserVerificationRequest(row.transaction_id, row.device_address, row.vi_user_id, row.vi_vr_id, onDone);
 			});
 		}
 	);
@@ -134,13 +134,13 @@ function checkUserVerificationRequest(transaction_id, device_address, vi_user_id
 				let row = rows[0];
 				if (row.vi_status !== 1) {
 					unlock();
-					return onDone();
+					return onDone(null, false);
 				}
 
 				api.getUserVerifyRequestStatus(vi_user_id, vi_vr_id, (err, statusCode, vr_status) => {
 					if (err) {
 						unlock();
-						return onDone();
+						return onDone(err);
 					}
 
 					if (statusCode === 404 || vr_status === 'no_verification_request') {
@@ -152,7 +152,7 @@ function checkUserVerificationRequest(transaction_id, device_address, vi_user_id
 							[transaction_id],
 							() => {
 								unlock();
-								onDone();
+								onDone(null, false);
 							}
 						);
 					}
@@ -162,19 +162,18 @@ function checkUserVerificationRequest(transaction_id, device_address, vi_user_id
 						// may be it will be new status in service
 						notifications.notifyAdmin(`getVerReqStatusDescription`, `Status ${vr_status} not found`);
 						unlock();
-						return onDone();
+						return onDone(null, false);
 					}
 
 					if (checkIfVerificationRequestStatusIsNeutral(vr_status)) {
 						unlock();
-						return onDone();
+						return onDone(null, false);
 					}
 
 					let numNewVIStatus;
 					let text = texts.verificationRequestCompletedWithStatus(vrStatusDescription) + '\n\n';
 					if (vr_status === 'accredited') {
 						numNewVIStatus = 2;
-						//TODO: add attestation
 					} else {
 						numNewVIStatus = 3;
 						text += texts.currentAttestationFailed();
@@ -187,7 +186,7 @@ function checkUserVerificationRequest(transaction_id, device_address, vi_user_id
 						[numNewVIStatus, vr_status, transaction_id],
 						() => {
 							unlock();
-							onDone();
+							onDone(null, numNewVIStatus === 2 ? transaction_id : false);
 						}
 					);
 					device.sendMessageToDevice(device_address, 'text', text);

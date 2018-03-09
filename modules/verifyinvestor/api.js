@@ -16,7 +16,7 @@ exports.checkAuthAndGetUserId = (identifier, onDone) => {
 	sendRequest(
 		getUrnByKey('identifier', identifier),
 		(err, response, body) => {
-			console.error('checkAuthAndGetUserId', identifier, err, response.statusCode, body);
+			// console.error('checkAuthAndGetUserId', identifier, err, response.statusCode, body);
 			if (err) {
 				notifications.notifyAdmin(`verifyinvestor api checkAuth: ${identifier} err`, err);
 				return onDone(err);
@@ -49,7 +49,8 @@ exports.postVerificationRequestToUser = (user_id, user_address, onDone) => {
 			method: 'POST',
 			urn: getUrnByKey('user_verification_requests', user_id),
 			form: {
-				deal_name: `byteball address ${user_address}`
+				deal_name: `byteball address ${user_address}`,
+				legal_name: `byteball address ${user_address}`
 			}
 		}, (err, response, body) => {
 			if (err) {
@@ -77,6 +78,7 @@ exports.getUserVerifyRequestStatus = (user_id, vr_id, onDone) => {
 	sendRequest(
 		getUrnByKey('verify_user_request', user_id, vr_id),
 		(err, response, body) => {
+			console.error('getUserVerifyRequestStatus', user_id, vr_id, err, response.statusCode, body);
 			if (err) {
 				notifications.notifyAdmin(`verifyinvestor api checkUserVerifyRequest: ${user_id} ${vr_id} err`, err);
 				return onDone(err);

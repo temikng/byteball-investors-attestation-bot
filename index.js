@@ -103,11 +103,103 @@ function handleWalletReady() {
 				setInterval(investorAttestation.retryPostingAttestations, 10*1000);
 				setInterval(reward.retrySendingRewards, 10*1000);
 				setInterval(verifyInvestor.retryCheckAuthAndPostVerificationRequest, 10*1000);
-				setInterval(verifyInvestor.retryCheckVerificationRequests, 10*1000);
+				setInterval(retryCheckVerificationRequests, 10*1000);
 				setInterval(moveFundsToAttestorAddresses, 60*1000);
 			// });
 		});
 	});
+}
+
+function retryCheckVerificationRequests() {
+	verifyInvestor.retryCheckVerificationRequests(handleCheckVerificationRequest);
+}
+
+function handleCheckVerificationRequest(err, transaction_id) {
+	if (err || !transaction_id) {
+		return;
+	}
+	let device = require('byteballcore/device.js');
+
+	db.query(
+		`SELECT user_address, device_address, payment_unit
+		FROM transactions 
+		CROSS JOIN receiving_addresses USING(receiving_address) 
+		WHERE transaction_id=?`,
+		[transaction_id],
+		(rows) => {
+			let row = rows[0];
+
+			db.query(
+				`INSERT ${db.getIgnore()} INTO attestation_units 
+				(transaction_id) 
+				VALUES (?)`,
+				[transaction_id],
+				() => {
+
+					let	attestation = investorAttestation.getAttestationPayload(row.user_address);
+
+					investorAttestation.postAndWriteAttestation(
+						transaction_id,
+						investorAttestation.investorAttestorAddress,
+						attestation
+					);
+
+					if (conf.rewardInUSD) {
+						let rewardInBytes = conversion.getPriceInBytes(conf.rewardInUSD);
+						db.query(
+							`INSERT ${db.getIgnore()} INTO reward_units
+							(transaction_id, user_address, user_id, reward)
+							VALUES (?,?,?,?)`,
+							[transaction_id, row.user_address, attestation.profile.user_id, rewardInBytes],
+							(res) => {
+								console.error(`reward_units insertId: ${res.insertId}, affectedRows: ${res.affectedRows}`);
+								if (!res.affectedRows) {
+									return console.log(`duplicate user_address or user_id: ${row.user_address}, ${attestation.profile.user_id}`);
+								}
+
+								device.sendMessageToDevice(row.device_address, 'text', texts.attestedSuccessFirstTimeBonus(rewardInBytes));
+								reward.sendAndWriteReward('attestation', transaction_id);
+
+								if (conf.referralRewardInUSD) {
+									let referralRewardInBytes = conversion.getPriceInBytes(conf.referralRewardInUSD);
+									reward.findReferral(row.payment_unit, (referring_user_id, referring_user_address, referring_user_device_address) => {
+										if (!referring_user_address) {
+											// console.error("no referring user for " + row.user_address);
+											return console.log("no referring user for " + row.user_address);
+										}
+
+										db.query(
+											`INSERT ${db.getIgnore()} INTO referral_reward_units
+											(transaction_id, user_address, user_id, new_user_address, new_user_id, reward)
+											VALUES (?, ?,?, ?,?, ?)`,
+											[transaction_id,
+												referring_user_address, referring_user_id,
+												row.user_address, attestation.profile.user_id,
+												referralRewardInBytes],
+											(res) => {
+												console.log(`referral_reward_units insertId: ${res.insertId}, affectedRows: ${res.affectedRows}`);
+												if (!res.affectedRows) {
+													return notifications.notifyAdmin(
+														"duplicate referral reward",
+														`referral reward for new user ${row.user_address} ${attestation.profile.user_id} already written`
+													);
+												}
+
+												device.sendMessageToDevice(referring_user_device_address, 'text', texts.referredUserBonus(conf.referralRewardInBytes));
+												reward.sendAndWriteReward('referral', transaction_id);
+											}
+										);
+									});
+								} // if conf.referralRewardInBytes
+
+							}
+						);
+					} // if conf.rewardInBytes
+
+				}
+			);
+
+		});
 }
 
 function moveFundsToAttestorAddresses() {
