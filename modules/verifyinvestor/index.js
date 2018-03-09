@@ -143,8 +143,38 @@ function checkUserVerificationRequest(transaction_id, device_address, vi_user_id
 						return onDone(err);
 					}
 
-					if (statusCode === 404 || vr_status === 'no_verification_request') {
-						// User or verification does not exist, or API user is not authorized to check
+					// User or verification does not exist, or API user is not authorized to check
+					if (statusCode === 404) {
+
+						// check if the verifyinvestor server is answers correct
+						api.sendRequest(api.getUrnByKey('api'), (err, response, body) => {
+							if (err) {
+								notifications.notifyAdmin(`sendRequest api error`, err);
+								unlock();
+								return onDone(err);
+							}
+
+							if (response.statusCode !== 200) {
+								notifications.notifyAdmin(`sendRequest api statusCode ${response.statusCode}`, body);
+								unlock();
+								return onDone(response.statusCode);
+							}
+
+							return db.query(
+								`UPDATE transactions
+								SET vi_status=0
+								WHERE transaction_id=?`,
+								[transaction_id],
+								() => {
+									unlock();
+									onDone(null, false);
+								}
+							);
+
+						});
+					}
+
+					if (vr_status === 'no_verification_request') {
 						return db.query(
 							`UPDATE transactions
 							SET vi_status=0

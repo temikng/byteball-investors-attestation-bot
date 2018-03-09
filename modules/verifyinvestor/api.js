@@ -8,6 +8,9 @@ const API_TOKEN = conf.verifyInvestorApiToken;
 const USER_AUTHORIZATION_TOKEN = conf.verifyInvestorUserAuthorizationToken;
 const URL = conf.verifyInvestorUrl;
 
+exports.sendRequest = sendRequest;
+exports.getUrnByKey = getUrnByKey;
+
 exports.getAuthUrn= (identifier) => {
 	return getUrnByKey('auth', identifier);
 };
