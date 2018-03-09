@@ -62,11 +62,29 @@ exports.receivedYourPayment = (amount) => {
 };
 
 exports.paymentIsConfirmed = () => {
-	return "Your payment is confirmed, redirecting to verify investor ...";
+	return "Your payment is confirmed.";
 };
 
-exports.clickInvestorLink = (redirectUrn) => {
-	return `Please click this link to start verification: ${conf.verifyInvestorUrl}${redirectUrn}`;
+exports.clickInvestorLink = (redirectUrl) => {
+	return [
+		`Please click this link to grant bot access to your verification status: ${redirectUrl}\n`,
+		'If you already allowed access, please wait, while the bot check it.'
+	].join('');
+};
+
+exports.receivedAuthToUserAccount = () => {
+	return 'The bot received access to your account, and sent verification request.';
+};
+
+exports.waitingWhileVerificationRequestFinished = () => {
+	return [
+		'Please complete verification request.\n',
+		'If you already completed verification request, please wait, while the bot check it.'
+	].join('');
+};
+
+exports.verificationRequestCompletedWithStatus = (statusDescription) => {
+	return `Verification request completed with status: "${statusDescription}".`;
 };
 
 exports.attestedSuccessFirstTimeBonus = (rewardInBytes) => {

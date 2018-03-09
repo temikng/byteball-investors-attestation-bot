@@ -12,10 +12,11 @@ exports.getAuthUrn= (identifier) => {
 	return getUrnByKey('auth', identifier);
 };
 
-exports.checkAuthAndGetId = (identifier, onDone) => {
+exports.checkAuthAndGetUserId = (identifier, onDone) => {
 	sendRequest(
 		getUrnByKey('identifier', identifier),
 		(err, response, body) => {
+			console.error('checkAuthAndGetUserId', identifier, err, response.statusCode, body);
 			if (err) {
 				notifications.notifyAdmin(`verifyinvestor api checkAuth: ${identifier} err`, err);
 				return onDone(err);
@@ -24,6 +25,7 @@ exports.checkAuthAndGetId = (identifier, onDone) => {
 			const statusCode = response.statusCode;
 			if (statusCode !== 200) {
 				if (statusCode === 404) {
+					// User does not exist, or has not authorized your application
 					return onDone(null, false);
 				}
 
@@ -41,11 +43,14 @@ exports.checkAuthAndGetId = (identifier, onDone) => {
 	);
 };
 
-exports.postVerificationRequestToUser = (user_id, onDone) => {
+exports.postVerificationRequestToUser = (user_id, user_address, onDone) => {
 	sendRequest(
 		{
 			method: 'POST',
-			urn: getUrnByKey('user_verification_requests', user_id)
+			urn: getUrnByKey('user_verification_requests', user_id),
+			form: {
+				deal_name: `byteball address ${user_address}`
+			}
 		}, (err, response, body) => {
 			if (err) {
 				notifications.notifyAdmin(`verifyinvestor api postVerificationRequestToUser: ${user_id} err`, err);
@@ -70,7 +75,7 @@ exports.postVerificationRequestToUser = (user_id, onDone) => {
 
 exports.getUserVerifyRequestStatus = (user_id, vr_id, onDone) => {
 	sendRequest(
-		getUrnByKey('verify_user', user_id, vr_id),
+		getUrnByKey('verify_user_request', user_id, vr_id),
 		(err, response, body) => {
 			if (err) {
 				notifications.notifyAdmin(`verifyinvestor api checkUserVerifyRequest: ${user_id} ${vr_id} err`, err);
@@ -79,8 +84,13 @@ exports.getUserVerifyRequestStatus = (user_id, vr_id, onDone) => {
 
 			const statusCode = response.statusCode;
 			if (statusCode !== 200) {
-				notifications.notifyAdmin(`verifyinvestor api checkUserVerifyRequest: ${user_id} ${vr_id} statusCode ${statusCode}`, body);
-				return onDone(statusCode);
+				if (statusCode === 404) {
+					return onDone(null, statusCode, null);
+				} else {
+					notifications.notifyAdmin(`verifyinvestor api checkUserVerifyRequest: ${user_id} ${vr_id} statusCode ${statusCode}`, body);
+					return onDone(statusCode);
+				}
+
 			}
 
 			if (!body || !body.id || body.id !== vr_id || !body.status) {
@@ -88,7 +98,7 @@ exports.getUserVerifyRequestStatus = (user_id, vr_id, onDone) => {
 				return onDone('wrong body');
 			}
 
-			return onDone(null, body.status);
+			return onDone(null, statusCode, body.status);
 		}
 	);
 };
@@ -116,12 +126,12 @@ function getUrnByKey(key) {
 			if (!arguments[1]) throw new Error('require set user id');
 			return `/api/v1/users/${arguments[1]}/verification_requests`
 		}
-		case 'verify_user': {
+		case 'verify_user_request': {
 			if (!arguments[1]) throw new Error('require set user id');
 			if (!arguments[2]) throw new Error('require set verification request id');
 			return `/api/v1/users/${arguments[1]}/verification_requests/${arguments[2]}`;
 		}
-		case 'user_review_request': { // staging only
+		case 'review_user_request': { // staging only
 			if (!arguments[1]) throw new Error('require set user id');
 			if (!arguments[2]) throw new Error('require set verification request id');
 			return `/api/v1/users/${arguments[1]}/verification_requests/${arguments[2]}/review`;

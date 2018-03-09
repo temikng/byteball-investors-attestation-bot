@@ -102,7 +102,8 @@ function handleWalletReady() {
 
 				setInterval(investorAttestation.retryPostingAttestations, 10*1000);
 				setInterval(reward.retrySendingRewards, 10*1000);
-				// setInterval(retrySendingEmails, 60*1000);
+				setInterval(verifyInvestor.retryCheckAuthAndPostVerificationRequest, 10*1000);
+				setInterval(verifyInvestor.retryCheckVerificationRequests, 10*1000);
 				setInterval(moveFundsToAttestorAddresses, 60*1000);
 			// });
 		});
@@ -258,7 +259,7 @@ function handleTransactionsBecameStable(arrUnits) {
 						device.sendMessageToDevice(
 							row.device_address,
 							'text',
-							texts.paymentIsConfirmed() + '\n\n' + texts.clickInvestorLink(verifyInvestor.getAuthUrn(row.user_address))
+							texts.paymentIsConfirmed() + '\n\n' + texts.clickInvestorLink(verifyInvestor.getAuthUrl(row.user_address))
 						);
 						// verifyInvestor.init(row.transaction_id, row.device_address, row.user_address);
 					}
@@ -315,6 +316,7 @@ function respond (from_address, text, response = '') {
 				db.query(
 					`SELECT
 						transaction_id, is_confirmed, received_amount, user_address,
+						vi_status, vi_result,
 						attestation_date
 					FROM transactions
 					JOIN receiving_addresses USING(receiving_address)
@@ -349,7 +351,31 @@ function respond (from_address, text, response = '') {
 							);
 						}
 
-						//TODO: add check of attestation
+						let vi_status = row.vi_status;
+
+						if (vi_status === 0) {
+							return device.sendMessageToDevice(
+								from_address,
+								'text',
+								(response ? response + '\n\n' : '') + texts.clickInvestorLink(verifyInvestor.getAuthUrl(row.user_address))
+							);
+						}
+
+						if (vi_status === 1) {
+							return device.sendMessageToDevice(
+								from_address,
+								'text',
+								(response ? response + '\n\n' : '') + texts.waitingWhileVerificationRequestFinished()
+							)
+						}
+
+						if (vi_status === 3) {
+							return device.sendMessageToDevice(
+								from_address,
+								'text',
+								(response ? response + '\n\n' : '') + texts.waitingWhileVerificationRequestFinished(verifyInvestor.getVerReqStatusDescription(row.vi_result))
+							)
+						}
 
 						/**
 						 * no more available commands, user is attested
@@ -418,7 +444,7 @@ function readOrAssignReceivingAddress(device_address, userInfo, callback) {
 					db.query(
 						`INSERT INTO receiving_addresses 
 						(device_address, user_address, receiving_address) 
-						VALUES(?,?,?,?)`,
+						VALUES(?,?,?)`,
 						[device_address, userInfo.user_address, receiving_address],
 						() => {
 							callback(receiving_address);

@@ -29,24 +29,20 @@ CREATE TABLE transactions (
 	payment_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	is_confirmed INT NOT NULL DEFAULT 0,
 	confirmation_date TIMESTAMP NULL,
-	vi_status TINYINT NULL, -- NULL not ready for verify, 0 ready for auth, 1 auth, 2 accredited, 3 failure
-	vi_id INTEGER NULL,
-	vi_result CHAR(64) NULL,
-	result_date TIMESTAMP NULL,
-	-- extracted_data VARCHAR(4096) NULL, -- json, it may be useful for storing data
+	vi_status TINYINT NULL, -- NULL not ready for verify, 0 ready for auth, 1 authenticated & post vr, 2 accredited, 3 failure
+  vi_user_id INTEGER NULL,
+  vi_vr_id INTEGER NULL,
+  vi_vr_status CHAR(64) NULL, -- verification request real status
+  result_date TIMESTAMP NULL,
 	FOREIGN KEY (receiving_address) REFERENCES receiving_addresses(receiving_address),
 	FOREIGN KEY (payment_unit) REFERENCES units(unit) ON DELETE CASCADE
 );
 CREATE INDEX byScanResult ON transactions(scan_result);
 
-
-
 CREATE TABLE attestation_units (
-	transaction_id INTEGER NOT NULL,
-	attestation_type CHAR(20) NOT NULL,
+	transaction_id INTEGER NOT NULL PRIMARY KEY,
 	attestation_unit CHAR(44) NULL UNIQUE,
 	attestation_date TIMESTAMP NULL,
-	PRIMARY KEY (transaction_id, attestation_type),
 	FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id),
 	FOREIGN KEY (attestation_unit) REFERENCES units(unit)
 );
