@@ -87,6 +87,10 @@ exports.verificationRequestCompletedWithStatus = (statusDescription) => {
 	return `Verification request completed with status: "${statusDescription}".`;
 };
 
+exports.inAttestation = () => {
+	return `Verification request was confirmed. You are in attestation. Please, wait.`;
+};
+
 exports.attestedSuccessFirstTimeBonus = (rewardInBytes) => {
 	return [
 		"You requested an attestation for the first time and will receive a welcome bonus ",

@@ -72,7 +72,7 @@ function checkAuthAndPostVerificationRequest(transaction_id, device_address, use
 					return onDone();
 				}
 
-				api.checkAuthAndGetUserId(user_address, (err, vi_user_id) => {
+				api.checkAuthAndGetUserId('ua'+user_address, (err, vi_user_id) => {
 					if (err || !vi_user_id) {
 						unlock();
 						return onDone();

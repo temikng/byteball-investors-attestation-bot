@@ -259,9 +259,8 @@ function handleTransactionsBecameStable(arrUnits) {
 						device.sendMessageToDevice(
 							row.device_address,
 							'text',
-							texts.paymentIsConfirmed() + '\n\n' + texts.clickInvestorLink(verifyInvestor.getAuthUrl(row.user_address))
+							texts.paymentIsConfirmed() + '\n\n' + texts.clickInvestorLink(verifyInvestor.getAuthUrl('ua'+row.user_address))
 						);
-						// verifyInvestor.init(row.transaction_id, row.device_address, row.user_address);
 					}
 				);
 			});
@@ -277,7 +276,6 @@ function handleTransactionsBecameStable(arrUnits) {
  */
 function respond (from_address, text, response = '') {
 	let device = require('byteballcore/device.js');
-	const mutex = require('byteballcore/mutex.js');
 	readUserInfo(from_address, (userInfo) => {
 
 		function checkUserAddress(onDone) {
@@ -316,7 +314,7 @@ function respond (from_address, text, response = '') {
 				db.query(
 					`SELECT
 						transaction_id, is_confirmed, received_amount, user_address,
-						vi_status, vi_result,
+						vi_status, vi_vr_status,
 						attestation_date
 					FROM transactions
 					JOIN receiving_addresses USING(receiving_address)
@@ -338,7 +336,6 @@ function respond (from_address, text, response = '') {
 						}
 
 						let row = rows[0];
-						let transaction_id = row.transaction_id;
 
 						/**
 						 * if user payed, but transaction did not become stable
@@ -357,7 +354,7 @@ function respond (from_address, text, response = '') {
 							return device.sendMessageToDevice(
 								from_address,
 								'text',
-								(response ? response + '\n\n' : '') + texts.clickInvestorLink(verifyInvestor.getAuthUrl(row.user_address))
+								(response ? response + '\n\n' : '') + texts.clickInvestorLink(verifyInvestor.getAuthUrl('ua'+row.user_address))
 							);
 						}
 
@@ -373,8 +370,16 @@ function respond (from_address, text, response = '') {
 							return device.sendMessageToDevice(
 								from_address,
 								'text',
-								(response ? response + '\n\n' : '') + texts.waitingWhileVerificationRequestFinished(verifyInvestor.getVerReqStatusDescription(row.vi_result))
+								(response ? response + '\n\n' : '') + texts.previousAttestationFailed(verifyInvestor.getVerReqStatusDescription(row.vi_vr_result))
 							)
+						}
+
+						if (!row.attestation_date) {
+							return device.sendMessageToDevice(
+								from_address,
+								'text',
+								(response ? response + '\n\n' : '') + texts.inAttestation()
+							);
 						}
 
 						/**
