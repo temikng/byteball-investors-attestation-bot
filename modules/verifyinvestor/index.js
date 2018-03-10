@@ -201,12 +201,12 @@ function checkUserVerificationRequest(transaction_id, device_address, vi_user_id
 					}
 
 					let numNewVIStatus;
-					let text = texts.verificationRequestCompletedWithStatus(vrStatusDescription) + '\n\n';
+					let text = texts.verificationRequestCompletedWithStatus(vrStatusDescription);
 					if (vr_status === 'accredited') {
 						numNewVIStatus = 2;
 					} else {
 						numNewVIStatus = 3;
-						text += texts.currentAttestationFailed();
+						text += '\n\n' + texts.currentAttestationFailed();
 					}
 
 					db.query(
