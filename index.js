@@ -121,7 +121,7 @@ function handleCheckVerificationRequest(err, transaction_id) {
 	let device = require('byteballcore/device.js');
 
 	db.query(
-		`SELECT user_address, device_address, payment_unit
+		`SELECT user_address, vi_user_id, device_address, payment_unit
 		FROM transactions 
 		CROSS JOIN receiving_addresses USING(receiving_address) 
 		WHERE transaction_id=?`,
@@ -148,13 +148,13 @@ function handleCheckVerificationRequest(err, transaction_id) {
 						let rewardInBytes = conversion.getPriceInBytes(conf.rewardInUSD);
 						db.query(
 							`INSERT ${db.getIgnore()} INTO reward_units
-							(transaction_id, user_address, reward)
-							VALUES (?,?,?)`,
-							[transaction_id, row.user_address, rewardInBytes],
+							(transaction_id, user_address, vi_user_id, reward)
+							VALUES (?,?,?,?)`,
+							[transaction_id, row.user_address, row.vi_user_id, rewardInBytes],
 							(res) => {
 								console.error(`reward_units insertId: ${res.insertId}, affectedRows: ${res.affectedRows}`);
 								if (!res.affectedRows) {
-									return console.log(`duplicate user_address: ${row.user_address}`);
+									return console.log(`duplicate user_address or vi_user_id: ${row.user_address}, ${row.vi_user_id}`);
 								}
 
 								device.sendMessageToDevice(row.device_address, 'text', texts.attestedSuccessFirstTimeBonus(rewardInBytes));

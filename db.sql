@@ -62,6 +62,7 @@ CREATE TABLE rejected_payments (
 CREATE TABLE reward_units (
 	transaction_id INTEGER NOT NULL PRIMARY KEY,
 	user_address CHAR(32) NOT NULL UNIQUE,
+	vi_user_id INTEGER NOT NULL UNIQUE,
 	reward INT NOT NULL,
 	reward_unit CHAR(44) NULL UNIQUE,
 	reward_date TIMESTAMP NULL,
