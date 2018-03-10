@@ -122,10 +122,11 @@ function postAttestation(attestor_address, payload, onDone) {
 	composer.composeJoint(params);
 }
 
-function getAttestationPayload(user_address) {
+function getAttestationPayload(user_address, vi_user_id) {
 	return {
 		address: user_address,
 		profile: {
+			vi_user_id,
 			investor: 1
 		}
 	};

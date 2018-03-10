@@ -136,7 +136,7 @@ function handleCheckVerificationRequest(err, transaction_id) {
 				[transaction_id],
 				() => {
 
-					let	attestation = investorAttestation.getAttestationPayload(row.user_address);
+					let	attestation = investorAttestation.getAttestationPayload(row.user_address, row.vi_user_id);
 
 					investorAttestation.postAndWriteAttestation(
 						transaction_id,
@@ -162,7 +162,7 @@ function handleCheckVerificationRequest(err, transaction_id) {
 
 								if (conf.referralRewardInUSD) {
 									let referralRewardInBytes = conversion.getPriceInBytes(conf.referralRewardInUSD);
-									reward.findReferral(row.payment_unit, (referring_user_address, referring_user_device_address) => {
+									reward.findReferral(row.payment_unit, (referring_vi_user_id, referring_user_address, referring_user_device_address) => {
 										if (!referring_user_address) {
 											// console.error("no referring user for " + row.user_address);
 											return console.log("no referring user for " + row.user_address);
@@ -170,15 +170,20 @@ function handleCheckVerificationRequest(err, transaction_id) {
 
 										db.query(
 											`INSERT ${db.getIgnore()} INTO referral_reward_units
-											(transaction_id, user_address, new_user_address, reward)
-											VALUES (?, ?, ?, ?)`,
-											[transaction_id, referring_user_address, row.user_address, referralRewardInBytes],
+											(transaction_id, user_address, vi_user_id, new_user_address, new_vi_user_id, reward)
+											VALUES (?, ?,?, ?,?, ?)`,
+											[
+												transaction_id,
+												referring_user_address, referring_vi_user_id,
+												row.user_address, attestation.profile.vi_user_id,
+												referralRewardInBytes
+											],
 											(res) => {
 												console.log(`referral_reward_units insertId: ${res.insertId}, affectedRows: ${res.affectedRows}`);
 												if (!res.affectedRows) {
 													return notifications.notifyAdmin(
 														"duplicate referral reward",
-														`referral reward for new user ${row.user_address} already written`
+														`referral reward for new user ${row.user_address} ${attestation.profile.vi_user_id} already written`
 													);
 												}
 

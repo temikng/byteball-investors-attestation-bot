@@ -73,10 +73,13 @@ CREATE TABLE reward_units (
 CREATE TABLE referral_reward_units (
 	transaction_id INTEGER NOT NULL PRIMARY KEY,
 	user_address CHAR(32) NOT NULL,
+	vi_user_id CHAR(44) NOT NULL,
+  new_vi_user_id CHAR(44) NOT NULL UNIQUE,
 	new_user_address CHAR(44) NOT NULL UNIQUE,
 	reward INT NOT NULL,
 	reward_unit CHAR(44) NULL UNIQUE,
 	reward_date TIMESTAMP NULL,
 	FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id),
+	FOREIGN KEY (new_vi_user_id) REFERENCES reward_units(vi_user_id),
 	FOREIGN KEY (reward_unit) REFERENCES units(unit)
 );
