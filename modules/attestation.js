@@ -122,20 +122,12 @@ function postAttestation(attestor_address, payload, onDone) {
 	composer.composeJoint(params);
 }
 
-// function getUserId(profile){
-// 	let shortProfile = {
-// 		email: profile.email
-// 	};
-// 	return objectHash.getBase64Hash([shortProfile, conf.salt]);
-// }
-
 function getAttestationPayload(user_address) {
-	// let profile = {};
-
-	// profile.user_id = getUserId(profile);
 	return {
 		address: user_address,
-		// profile: profile
+		profile: {
+			investor: 1
+		}
 	};
 }
 

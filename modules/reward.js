@@ -134,13 +134,13 @@ function findReferral(payment_unit, handleReferral) {
 				AND transactions.payment_unit!=?`,
 			[attestation.investorAttestorAddress, payment_unit],
 			(rows) => {
-				if (rows.length === 0){
+				if (rows.length === 0) {
 					console.log("no referrals for payment unit "+payment_unit);
 					return handleReferral();
 				}
 
 				let max_mci = 0;
-				let best_user_id, best_row;
+				let best_row;
 				rows.forEach((row) => {
 					if (row.app !== 'attestation') {
 						throw Error(`unexpected app ${row.app} for payment ${payment_unit}`);
@@ -154,23 +154,17 @@ function findReferral(payment_unit, handleReferral) {
 						throw Error(`different addresses: address ${row.address}, payload ${row.user_address} for payment ${payment_unit}`);
 					}
 
-					let user_id = payload.profile.user_id;
-					if (!user_id) {
-						throw Error("no user_id for payment " + payment_unit);
-					}
-
 					let mci = assocMcisByAddress[row.address];
 					if (mci > max_mci) {
 						max_mci = mci;
 						best_row = row;
-						best_user_id = user_id;
 					}
 				});
-				if (!best_row || !best_user_id) {
+				if (!best_row) {
 					throw Error("no best for payment " + payment_unit);
 				}
 
-				handleReferral(best_user_id, best_row.user_address, best_row.device_address);
+				handleReferral(best_row.user_address, best_row.device_address);
 			}
 		);
 	}
