@@ -7,12 +7,16 @@ const conf = require('byteballcore/conf');
  * responses for clients
  */
 exports.greeting = () => {
-	//TODO: fix message for current bot
 	return [
-		"Here you can attest ....\n\n",
+		"Here you can attest your byteball addresses as investor.\n",
+		"A proof of attestation will be posted publicly on the distributed ledger.\n\n",
 
 		`The price of attestation is $${conf.priceInUSD.toLocaleString([], {minimumFractionDigits: 2})}. `,
 		"The payment is nonrefundable even if the attestation fails for any reason.\n\n",
+
+		'After payment, you will receive a link to VerifyInvestor service ',
+		'in order to allow the bot to receive an access to your account. ',
+		'and then receive verification request, that you need to complete.\n\n',
 
 		`After you successfully attestation for the first time, `,
 		`you receive a $${conf.rewardInUSD.toLocaleString([], {minimumFractionDigits: 2})} reward in Bytes.`
