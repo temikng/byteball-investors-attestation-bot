@@ -14,7 +14,7 @@ function retryPostingAttestations() {
 		FROM attestation_units
 		JOIN transactions USING(transaction_id)
 		JOIN receiving_addresses USING(receiving_address)
-		WHERE attestation_unit IS NULL AND post_publicly=0`,
+		WHERE attestation_unit IS NULL`,
 		(rows) => {
 			rows.forEach((row) => {
 				let	attestation = getAttestationPayload(row.user_address);

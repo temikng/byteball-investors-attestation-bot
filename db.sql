@@ -10,7 +10,6 @@ CREATE TABLE receiving_addresses (
 	device_address CHAR(33) NOT NULL,
 	user_address CHAR(32) NOT NULL,
 	creation_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	post_publicly TINYINT NULL,
 	price INT NULL,
 	last_price_date TIMESTAMP NULL,
 	UNIQUE (device_address, user_address),
