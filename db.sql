@@ -36,7 +36,7 @@ CREATE TABLE transactions (
 	FOREIGN KEY (receiving_address) REFERENCES receiving_addresses(receiving_address),
 	FOREIGN KEY (payment_unit) REFERENCES units(unit) ON DELETE CASCADE
 );
-CREATE INDEX byScanResult ON transactions(scan_result);
+CREATE INDEX byVerifyInvestorStatus ON transactions(vi_status);
 
 CREATE TABLE attestation_units (
 	transaction_id INTEGER NOT NULL PRIMARY KEY,
