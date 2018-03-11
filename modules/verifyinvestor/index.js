@@ -211,7 +211,7 @@ function checkUserVerificationRequest(transaction_id, device_address, vi_user_id
 
 					db.query(
 						`UPDATE transactions
-						SET vi_status=?, vi_vr_status=?
+						SET vi_status=?, vi_vr_status=?, result_date=${db.getNow()}
 						WHERE transaction_id=?`,
 						[strNewVIStatus, vi_vr_status, transaction_id],
 						() => {
