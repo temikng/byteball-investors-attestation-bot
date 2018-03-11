@@ -15,11 +15,11 @@ exports.getAuthUrn= (identifier) => {
 	return getUrnByKey('auth', identifier);
 };
 
-exports.checkAuthAndGetUserId = (identifier, onDone) => {
+exports.checkAuthAndGetVerifyInvestorUserId = (identifier, onDone) => {
 	sendRequest(
 		getUrnByKey('identifier', identifier),
 		(err, response, body) => {
-			// console.error('checkAuthAndGetUserId', identifier, err, response.statusCode, body);
+			// console.error('checkAuthAndGetVerifyInvestorUserId', identifier, err, response.statusCode, body);
 			if (err) {
 				notifications.notifyAdmin(`verifyinvestor api checkAuth: ${identifier} err`, err);
 				return onDone(err);
@@ -46,29 +46,29 @@ exports.checkAuthAndGetUserId = (identifier, onDone) => {
 	);
 };
 
-exports.postVerificationRequestToUser = (user_id, user_address, onDone) => {
+exports.postVerificationRequestToVerifyInvestorUser = (vi_user_id, user_address, onDone) => {
 	sendRequest(
 		{
 			method: 'POST',
-			urn: getUrnByKey('user_verification_requests', user_id),
+			urn: getUrnByKey('user_verification_requests', vi_user_id),
 			form: {
 				deal_name: `byteball address ${user_address}`,
 				legal_name: `byteball address ${user_address}`
 			}
 		}, (err, response, body) => {
 			if (err) {
-				notifications.notifyAdmin(`verifyinvestor api postVerificationRequestToUser: ${user_id} err`, err);
+				notifications.notifyAdmin(`verifyinvestor api postVerificationRequestToVerifyInvestorUser: ${vi_user_id} err`, err);
 				return onDone(err);
 			}
 
 			const statusCode = response.statusCode;
 			if (statusCode !== 201) {
-				notifications.notifyAdmin(`verifyinvestor api postVerificationRequestToUser: ${user_id} statusCode ${statusCode}`, body);
+				notifications.notifyAdmin(`verifyinvestor api postVerificationRequestToVerifyInvestorUser: ${vi_user_id} statusCode ${statusCode}`, body);
 				return onDone(statusCode);
 			}
 
 			if (!body || !body.id) {
-				notifications.notifyAdmin(`verifyinvestor api postVerificationRequestToUser: ${user_id} body`, body);
+				notifications.notifyAdmin(`verifyinvestor api postVerificationRequestToVerifyInvestorUser: ${vi_user_id} body`, body);
 				return onDone('wrong body');
 			}
 
@@ -77,13 +77,13 @@ exports.postVerificationRequestToUser = (user_id, user_address, onDone) => {
 	);
 };
 
-exports.getUserVerifyRequestStatus = (user_id, vr_id, onDone) => {
+exports.getStatusOfVerificationRequestFromVerifyInvestorUser = (vi_user_id, vi_vr_id, onDone) => {
 	sendRequest(
-		getUrnByKey('verify_user_request', user_id, vr_id),
+		getUrnByKey('verify_user_request', vi_user_id, vi_vr_id),
 		(err, response, body) => {
-			console.error('getUserVerifyRequestStatus', user_id, vr_id, err, response.statusCode, body);
+			console.error('getStatusOfVerificationRequestFromVerifyInvestorUser', vi_user_id, vi_vr_id, err, response.statusCode, body);
 			if (err) {
-				notifications.notifyAdmin(`verifyinvestor api checkUserVerifyRequest: ${user_id} ${vr_id} err`, err);
+				notifications.notifyAdmin(`verifyinvestor api checkUserVerifyRequest: ${vi_user_id} ${vi_vr_id} err`, err);
 				return onDone(err);
 			}
 
@@ -92,14 +92,14 @@ exports.getUserVerifyRequestStatus = (user_id, vr_id, onDone) => {
 				if (statusCode === 404) {
 					return onDone(null, statusCode, null);
 				} else {
-					notifications.notifyAdmin(`verifyinvestor api checkUserVerifyRequest: ${user_id} ${vr_id} statusCode ${statusCode}`, body);
+					notifications.notifyAdmin(`verifyinvestor api checkUserVerifyRequest: ${vi_user_id} ${vi_vr_id} statusCode ${statusCode}`, body);
 					return onDone(statusCode);
 				}
 
 			}
 
-			if (!body || !body.id || body.id !== vr_id || !body.status) {
-				notifications.notifyAdmin(`verifyinvestor api checkUserVerifyRequest: ${user_id} ${vr_id} body`, body);
+			if (!body || !body.id || body.id !== vi_vr_id || !body.status) {
+				notifications.notifyAdmin(`verifyinvestor api checkUserVerifyRequest: ${vi_user_id} ${vi_vr_id} body`, body);
 				return onDone('wrong body');
 			}
 

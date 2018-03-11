@@ -72,13 +72,13 @@ function checkAuthAndPostVerificationRequest(transaction_id, device_address, use
 					return onDone();
 				}
 
-				api.checkAuthAndGetUserId('ua'+user_address, (err, vi_user_id) => {
+				api.checkAuthAndGetVerifyInvestorUserId('ua'+user_address, (err, vi_user_id) => {
 					if (err || !vi_user_id) {
 						unlock();
 						return onDone();
 					}
 
-					api.postVerificationRequestToUser(vi_user_id, user_address, (err, vi_vr_id) => {
+					api.postVerificationRequestToVerifyInvestorUser(vi_user_id, user_address, (err, vi_vr_id) => {
 						if (err) {
 							unlock();
 							return onDone();
@@ -137,7 +137,7 @@ function checkUserVerificationRequest(transaction_id, device_address, vi_user_id
 					return onDone(null, false);
 				}
 
-				api.getUserVerifyRequestStatus(vi_user_id, vi_vr_id, (err, statusCode, vr_status) => {
+				api.getStatusOfVerificationRequestFromVerifyInvestorUser(vi_user_id, vi_vr_id, (err, statusCode, vr_status) => {
 					if (err) {
 						unlock();
 						return onDone(err);
