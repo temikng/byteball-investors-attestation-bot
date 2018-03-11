@@ -22,7 +22,7 @@ exports.bSingleAddress = false;
 exports.bStaticChangeAddress = true;
 exports.KEYS_FILENAME = 'keys.json';
 
-//email
+// email
 exports.useSmtp = false;
 exports.admin_email = '';
 exports.from_email = '';
@@ -32,11 +32,12 @@ exports.bRunWitness = false;
 exports.THRESHOLD_DISTANCE = 20;
 exports.MIN_AVAILABLE_WITNESSINGS = 100;
 
-// verify investor
+// verifiinvestor.com service
 exports.verifyInvestorUrl = 'https://verifyinvestor.com';
 exports.verifyInvestorApiToken = '';
 exports.verifyInvestorUserAuthorizationToken = '';
 
+// finance
 exports.priceInUSD = 8;
 exports.rewardInUSD = 20;
 exports.referralRewardInUSD = 20;

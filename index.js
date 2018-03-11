@@ -110,7 +110,7 @@ function handleWalletReady() {
 				setInterval(investorAttestation.retryPostingAttestations, 10*1000);
 				setInterval(reward.retrySendingRewards, 10*1000);
 				setInterval(moveFundsToAttestorAddresses, 60*1000);
-				setInterval(verifyInvestor.retryCheckAuthAndPostVerificationRequest, 600*1000);
+				setInterval(verifyInvestor.retryCheckAuthAndPostVerificationRequest, 60*1000);
 				setInterval(retryCheckVerificationRequests, 600*1000);
 			});
 		});
