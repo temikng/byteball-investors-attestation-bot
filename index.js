@@ -346,7 +346,7 @@ function handleTransactionsBecameStable(arrUnits) {
 			rows.forEach((row) => {
 				db.query(
 					`UPDATE transactions 
-					SET confirmation_date=${db.getNow()}, is_confirmed=1, vi_status=0
+					SET confirmation_date=${db.getNow()}, is_confirmed=1, vi_status='on_authentication'
 					WHERE transaction_id=?`,
 					[row.transaction_id],
 					() => {
@@ -444,7 +444,7 @@ function respond (from_address, text, response = '') {
 
 						let vi_status = row.vi_status;
 
-						if (vi_status === 0) {
+						if (vi_status === 'on_authentication') {
 							return device.sendMessageToDevice(
 								from_address,
 								'text',
@@ -452,7 +452,7 @@ function respond (from_address, text, response = '') {
 							);
 						}
 
-						if (vi_status === 1) {
+						if (vi_status === 'on_verification') {
 							return device.sendMessageToDevice(
 								from_address,
 								'text',
@@ -460,11 +460,11 @@ function respond (from_address, text, response = '') {
 							)
 						}
 
-						if (vi_status === 3) {
+						if (vi_status === 'not_accredited') {
 							return device.sendMessageToDevice(
 								from_address,
 								'text',
-								(response ? response + '\n\n' : '') + texts.previousAttestationFailed(verifyInvestor.getVerReqStatusDescription(row.vi_vr_result))
+								(response ? response + '\n\n' : '') + texts.previousAttestationFailed(verifyInvestor.getVerReqStatusDescription(row.vi_vr_status))
 							)
 						}
 

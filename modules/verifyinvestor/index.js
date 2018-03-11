@@ -10,8 +10,8 @@ exports.getAuthUrl = (identifier) => {
 	return conf.verifyInvestorUrl + api.getAuthUrn(identifier);
 };
 
-exports.getVerReqStatusDescription = (vi_status) => {
-	switch (vi_status) {
+exports.getVerReqStatusDescription = (vi_vr_status) => {
+	switch (vi_vr_status) {
 		case 'accredited':
 			return 'The investor is verified as accredited';
 		case 'no_verification_request':
@@ -46,7 +46,7 @@ exports.retryCheckAuthAndPostVerificationRequest = () => {
 	db.query(
 		`SELECT transaction_id, device_address, user_address
 		FROM transactions JOIN receiving_addresses USING(receiving_address)
-		WHERE vi_status = 0`,
+		WHERE vi_status = 'on_authentication'`,
 		(rows) => {
 			rows.forEach((row) => {
 				checkAuthAndPostVerificationRequest(row.transaction_id, row.device_address, row.user_address);
@@ -67,7 +67,7 @@ function checkAuthAndPostVerificationRequest(transaction_id, device_address, use
 			[transaction_id],
 			(rows) => {
 				let row = rows[0];
-				if (row.vi_status !== 0) {
+				if (row.vi_status !== 'on_authentication') {
 					unlock();
 					return onDone();
 				}
@@ -86,7 +86,7 @@ function checkAuthAndPostVerificationRequest(transaction_id, device_address, use
 
 						db.query(
 							`UPDATE transactions
-							SET vi_status=1, vi_user_id=?, vi_vr_id=?
+							SET vi_status='on_verification', vi_user_id=?, vi_vr_id=?
 							WHERE transaction_id=?`,
 							[vi_user_id, vi_vr_id, transaction_id],
 							() => {
@@ -111,7 +111,7 @@ exports.retryCheckVerificationRequests = (onDone) => {
 	db.query(
 		`SELECT transaction_id, device_address, vi_user_id, vi_vr_id
 		FROM transactions JOIN receiving_addresses USING(receiving_address)
-		WHERE vi_status = 1`,
+		WHERE vi_status = 'on_verification'`,
 		(rows) => {
 			rows.forEach((row) => {
 				checkUserVerificationRequest(row.transaction_id, row.device_address, row.vi_user_id, row.vi_vr_id, onDone);
@@ -132,21 +132,21 @@ function checkUserVerificationRequest(transaction_id, device_address, vi_user_id
 			[transaction_id],
 			(rows) => {
 				let row = rows[0];
-				if (row.vi_status !== 1) {
+				if (row.vi_status !== 'on_verification') {
 					unlock();
 					return onDone(null, false);
 				}
 
-				api.getStatusOfVerificationRequestFromVerifyInvestorUser(vi_user_id, vi_vr_id, (err, statusCode, vr_status) => {
+				api.getStatusOfVerificationRequestFromVerifyInvestorUser(vi_user_id, vi_vr_id, (err, statusCode, vi_vr_status) => {
 					if (err) {
 						unlock();
 						return onDone(err);
 					}
 
-					// User or verification does not exist, or API user is not authorized to check
+					// verify investor user or verification request does not exist, or API user is not authorized to check
 					if (statusCode === 404) {
 
-						// check if the verifyinvestor server is answers correct
+						// check if the verify investor server is answers correct
 						api.sendRequest(api.getUrnByKey('api'), (err, response, body) => {
 							if (err) {
 								notifications.notifyAdmin(`sendRequest api error`, err);
@@ -162,7 +162,7 @@ function checkUserVerificationRequest(transaction_id, device_address, vi_user_id
 
 							return db.query(
 								`UPDATE transactions
-								SET vi_status=0
+								SET vi_status='on_authentication'
 								WHERE transaction_id=?`,
 								[transaction_id],
 								() => {
@@ -174,10 +174,10 @@ function checkUserVerificationRequest(transaction_id, device_address, vi_user_id
 						});
 					}
 
-					if (vr_status === 'no_verification_request') {
+					if (vi_vr_status === 'no_verification_request') {
 						return db.query(
 							`UPDATE transactions
-							SET vi_status=0
+							SET vi_status='on_authentication'
 							WHERE transaction_id=?`,
 							[transaction_id],
 							() => {
@@ -187,25 +187,25 @@ function checkUserVerificationRequest(transaction_id, device_address, vi_user_id
 						);
 					}
 
-					let vrStatusDescription = exports.getVerReqStatusDescription(vr_status);
+					let vrStatusDescription = exports.getVerReqStatusDescription(vi_vr_status);
 					if (!vrStatusDescription) {
 						// may be it will be new status in service
-						notifications.notifyAdmin(`getVerReqStatusDescription`, `Status ${vr_status} not found`);
+						notifications.notifyAdmin(`getVerReqStatusDescription`, `Status ${vi_vr_status} not found`);
 						unlock();
 						return onDone(null, false);
 					}
 
-					if (checkIfVerificationRequestStatusIsNeutral(vr_status)) {
+					if (checkIfVerificationRequestStatusIsNeutral(vi_vr_status)) {
 						unlock();
 						return onDone(null, false);
 					}
 
-					let numNewVIStatus;
+					let strNewVIStatus;
 					let text = texts.verificationRequestCompletedWithStatus(vrStatusDescription);
-					if (vr_status === 'accredited') {
-						numNewVIStatus = 2;
+					if (vi_vr_status === 'accredited') {
+						strNewVIStatus = 'accredited';
 					} else {
-						numNewVIStatus = 3;
+						strNewVIStatus = 'not_accredited';
 						text += '\n\n' + texts.currentAttestationFailed();
 					}
 
@@ -213,10 +213,10 @@ function checkUserVerificationRequest(transaction_id, device_address, vi_user_id
 						`UPDATE transactions
 						SET vi_status=?, vi_vr_status=?
 						WHERE transaction_id=?`,
-						[numNewVIStatus, vr_status, transaction_id],
+						[strNewVIStatus, vi_vr_status, transaction_id],
 						() => {
 							unlock();
-							onDone(null, numNewVIStatus === 2 ? transaction_id : false);
+							onDone(null, strNewVIStatus === 'accredited' ? transaction_id : false);
 						}
 					);
 					device.sendMessageToDevice(device_address, 'text', text);

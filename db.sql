@@ -19,6 +19,15 @@ CREATE TABLE receiving_addresses (
 CREATE INDEX byReceivingAddress ON receiving_addresses(receiving_address);
 CREATE INDEX byUserAddress ON receiving_addresses(user_address);
 
+CREATE TABLE transaction_verify_investor_statuses (
+	name TEXT PRIMARY KEY
+);
+INSERT INTO transaction_verify_investor_statuses VALUES ('not_ready');
+INSERT INTO transaction_verify_investor_statuses VALUES ('on_authentication');
+INSERT INTO transaction_verify_investor_statuses VALUES ('on_verification');
+INSERT INTO transaction_verify_investor_statuses VALUES ('accredited');
+INSERT INTO transaction_verify_investor_statuses VALUES ('not_accredited');
+
 CREATE TABLE transactions (
 	transaction_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 	receiving_address CHAR(32) NOT NULL,
@@ -28,13 +37,14 @@ CREATE TABLE transactions (
 	payment_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	is_confirmed INT NOT NULL DEFAULT 0,
 	confirmation_date TIMESTAMP NULL,
-	vi_status TINYINT NULL, -- NULL not ready for verify, 0 ready for auth, 1 authenticated & post vr, 2 accredited, 3 failure
+	vi_status TEXT NOT NULL DEFAULT 'not_ready',
   vi_user_id INTEGER NULL,
   vi_vr_id INTEGER NULL,
   vi_vr_status CHAR(64) NULL, -- verification request real status
   result_date TIMESTAMP NULL,
 	FOREIGN KEY (receiving_address) REFERENCES receiving_addresses(receiving_address),
-	FOREIGN KEY (payment_unit) REFERENCES units(unit) ON DELETE CASCADE
+	FOREIGN KEY (payment_unit) REFERENCES units(unit) ON DELETE CASCADE,
+	FOREIGN KEY (vi_status) REFERENCES transaction_verify_investor_statuses(name)
 );
 CREATE INDEX byVerifyInvestorStatus ON transactions(vi_status);
 CREATE INDEX byVerifyInvestorUserId ON transactions(vi_user_id);
