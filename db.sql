@@ -37,6 +37,8 @@ CREATE TABLE transactions (
 	FOREIGN KEY (payment_unit) REFERENCES units(unit) ON DELETE CASCADE
 );
 CREATE INDEX byVerifyInvestorStatus ON transactions(vi_status);
+CREATE INDEX byVerifyInvestorUserId ON transactions(vi_user_id);
+CREATE INDEX byVerifyInvestorVerificationRequestId ON transactions(vi_vr_id);
 
 CREATE TABLE attestation_units (
 	transaction_id INTEGER NOT NULL PRIMARY KEY,
