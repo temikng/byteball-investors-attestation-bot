@@ -23,8 +23,8 @@ CREATE TABLE transaction_verify_investor_statuses (
 	name TEXT PRIMARY KEY
 );
 INSERT INTO transaction_verify_investor_statuses VALUES ('not_ready');
-INSERT INTO transaction_verify_investor_statuses VALUES ('on_authentication');
-INSERT INTO transaction_verify_investor_statuses VALUES ('on_verification');
+INSERT INTO transaction_verify_investor_statuses VALUES ('in_authentication');
+INSERT INTO transaction_verify_investor_statuses VALUES ('in_verification');
 INSERT INTO transaction_verify_investor_statuses VALUES ('accredited');
 INSERT INTO transaction_verify_investor_statuses VALUES ('not_accredited');
 

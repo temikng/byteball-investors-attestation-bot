@@ -46,7 +46,7 @@ exports.retryCheckAuthAndPostVerificationRequest = () => {
 	db.query(
 		`SELECT transaction_id, device_address, user_address
 		FROM transactions JOIN receiving_addresses USING(receiving_address)
-		WHERE vi_status = 'on_authentication'`,
+		WHERE vi_status = 'in_authentication'`,
 		(rows) => {
 			rows.forEach((row) => {
 				checkAuthAndPostVerificationRequest(row.transaction_id, row.device_address, row.user_address);
@@ -67,7 +67,7 @@ function checkAuthAndPostVerificationRequest(transaction_id, device_address, use
 			[transaction_id],
 			(rows) => {
 				let row = rows[0];
-				if (row.vi_status !== 'on_authentication') {
+				if (row.vi_status !== 'in_authentication') {
 					unlock();
 					return onDone();
 				}
@@ -86,7 +86,7 @@ function checkAuthAndPostVerificationRequest(transaction_id, device_address, use
 
 						db.query(
 							`UPDATE transactions
-							SET vi_status='on_verification', vi_user_id=?, vi_vr_id=?
+							SET vi_status='in_verification', vi_user_id=?, vi_vr_id=?
 							WHERE transaction_id=?`,
 							[vi_user_id, vi_vr_id, transaction_id],
 							() => {
@@ -111,7 +111,7 @@ exports.retryCheckVerificationRequests = (onDone) => {
 	db.query(
 		`SELECT transaction_id, device_address, vi_user_id, vi_vr_id
 		FROM transactions JOIN receiving_addresses USING(receiving_address)
-		WHERE vi_status = 'on_verification'`,
+		WHERE vi_status = 'in_verification'`,
 		(rows) => {
 			rows.forEach((row) => {
 				checkUserVerificationRequest(row.transaction_id, row.device_address, row.vi_user_id, row.vi_vr_id, onDone);
@@ -132,7 +132,7 @@ function checkUserVerificationRequest(transaction_id, device_address, vi_user_id
 			[transaction_id],
 			(rows) => {
 				let row = rows[0];
-				if (row.vi_status !== 'on_verification') {
+				if (row.vi_status !== 'in_verification') {
 					unlock();
 					return onDone(null, false);
 				}
@@ -162,7 +162,7 @@ function checkUserVerificationRequest(transaction_id, device_address, vi_user_id
 
 							return db.query(
 								`UPDATE transactions
-								SET vi_status='on_authentication'
+								SET vi_status='in_authentication'
 								WHERE transaction_id=?`,
 								[transaction_id],
 								() => {
@@ -177,7 +177,7 @@ function checkUserVerificationRequest(transaction_id, device_address, vi_user_id
 					if (vi_vr_status === 'no_verification_request') {
 						return db.query(
 							`UPDATE transactions
-							SET vi_status='on_authentication'
+							SET vi_status='in_authentication'
 							WHERE transaction_id=?`,
 							[transaction_id],
 							() => {

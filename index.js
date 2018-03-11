@@ -346,7 +346,7 @@ function handleTransactionsBecameStable(arrUnits) {
 			rows.forEach((row) => {
 				db.query(
 					`UPDATE transactions 
-					SET confirmation_date=${db.getNow()}, is_confirmed=1, vi_status='on_authentication'
+					SET confirmation_date=${db.getNow()}, is_confirmed=1, vi_status='in_authentication'
 					WHERE transaction_id=?`,
 					[row.transaction_id],
 					() => {
@@ -444,7 +444,7 @@ function respond (from_address, text, response = '') {
 
 						let vi_status = row.vi_status;
 
-						if (vi_status === 'on_authentication') {
+						if (vi_status === 'in_authentication') {
 							return device.sendMessageToDevice(
 								from_address,
 								'text',
@@ -452,7 +452,7 @@ function respond (from_address, text, response = '') {
 							);
 						}
 
-						if (vi_status === 'on_verification') {
+						if (vi_status === 'in_verification') {
 							return device.sendMessageToDevice(
 								from_address,
 								'text',
