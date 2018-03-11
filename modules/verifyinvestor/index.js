@@ -195,7 +195,7 @@ function checkUserVerificationRequest(transaction_id, device_address, vi_user_id
 						return onDone(null, false);
 					}
 
-					if (checkIfVerificationRequestStatusIsNeutral(vi_vr_status)) {
+					if (exports.checkIfVerificationRequestStatusIsNeutral(vi_vr_status)) {
 						unlock();
 						return onDone(null, false);
 					}
@@ -226,7 +226,7 @@ function checkUserVerificationRequest(transaction_id, device_address, vi_user_id
 	});
 }
 
-function checkIfVerificationRequestStatusIsNeutral(status) {
+exports.checkIfVerificationRequestStatusIsNeutral = (status) => {
 	switch (status) {
 		case 'waiting_for_investor_acceptance':
 		case 'accepted_by_investor':
@@ -237,4 +237,4 @@ function checkIfVerificationRequestStatusIsNeutral(status) {
 		default:
 			return false;
 	}
-}
+};

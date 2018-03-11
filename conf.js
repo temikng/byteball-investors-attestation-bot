@@ -43,5 +43,8 @@ exports.referralRewardInUSD = 20;
 
 exports.PRICE_TIMEOUT = 3600; // in seconds
 
+// server
+exports.webPort = 8080;
+
 // set this in conf.json
 exports.salt = null;

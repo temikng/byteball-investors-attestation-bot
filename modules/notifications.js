@@ -16,7 +16,7 @@ if (conf.bUseSmtp) {
 }
 
 function notifyAdmin(subject, body) {
-	console.log('notifyAdmin:\n' + subject + '\n' + body);
+	console.error('notifyAdmin:\n' + subject + '\n' + body);
 	if (conf.bUseSmtp) {
 		server.send({
 			text: body,

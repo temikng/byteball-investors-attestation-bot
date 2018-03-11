@@ -13,6 +13,8 @@ const investorAttestation = require('./modules/attestation');
 const notifications = require('./modules/notifications');
 const verifyInvestor = require('./modules/verifyinvestor');
 
+const server = require('./modules/server');
+
 /**
  * user pairs his device with bot
  */
@@ -100,11 +102,16 @@ function handleWalletReady() {
 				console.log('== distribution address: ' + address2);
 				reward.distributionAddress = address2;
 
+				server.setHandlerCheckVerificationRequest(handleCheckVerificationRequest);
+				server.listen(conf.webPort, () => {
+					console.log(`== server start listen on ${conf.webPort} port`);
+				});
+
 				setInterval(investorAttestation.retryPostingAttestations, 10*1000);
 				setInterval(reward.retrySendingRewards, 10*1000);
-				setInterval(verifyInvestor.retryCheckAuthAndPostVerificationRequest, 10*1000);
-				setInterval(retryCheckVerificationRequests, 10*1000);
 				setInterval(moveFundsToAttestorAddresses, 60*1000);
+				setInterval(verifyInvestor.retryCheckAuthAndPostVerificationRequest, 600*1000);
+				setInterval(retryCheckVerificationRequests, 600*1000);
 			});
 		});
 	});
