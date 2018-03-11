@@ -46,7 +46,7 @@ exports.checkAuthAndGetVerifyInvestorUserId = (identifier, onDone) => {
 	);
 };
 
-exports.postVerificationRequestToVerifyInvestorUser = (vi_user_id, user_address, onDone) => {
+exports.postVerificationRequest = (vi_user_id, user_address, onDone) => {
 	sendRequest(
 		{
 			method: 'POST',
@@ -57,18 +57,18 @@ exports.postVerificationRequestToVerifyInvestorUser = (vi_user_id, user_address,
 			}
 		}, (err, response, body) => {
 			if (err) {
-				notifications.notifyAdmin(`verifyinvestor api postVerificationRequestToVerifyInvestorUser: ${vi_user_id} err`, err);
+				notifications.notifyAdmin(`verifyinvestor api postVerificationRequest: ${vi_user_id} err`, err);
 				return onDone(err);
 			}
 
 			const statusCode = response.statusCode;
 			if (statusCode !== 201) {
-				notifications.notifyAdmin(`verifyinvestor api postVerificationRequestToVerifyInvestorUser: ${vi_user_id} statusCode ${statusCode}`, body);
+				notifications.notifyAdmin(`verifyinvestor api postVerificationRequest: ${vi_user_id} statusCode ${statusCode}`, body);
 				return onDone(statusCode);
 			}
 
 			if (!body || !body.id) {
-				notifications.notifyAdmin(`verifyinvestor api postVerificationRequestToVerifyInvestorUser: ${vi_user_id} body`, body);
+				notifications.notifyAdmin(`verifyinvestor api postVerificationRequest: ${vi_user_id} body`, body);
 				return onDone('wrong body');
 			}
 
@@ -77,11 +77,11 @@ exports.postVerificationRequestToVerifyInvestorUser = (vi_user_id, user_address,
 	);
 };
 
-exports.getStatusOfVerificationRequestFromVerifyInvestorUser = (vi_user_id, vi_vr_id, onDone) => {
+exports.getStatusOfVerificationRequest = (vi_user_id, vi_vr_id, onDone) => {
 	sendRequest(
 		getUrnByKey('verify_user_request', vi_user_id, vi_vr_id),
 		(err, response, body) => {
-			console.error('getStatusOfVerificationRequestFromVerifyInvestorUser', vi_user_id, vi_vr_id, err, response.statusCode, body);
+			console.error('getStatusOfVerificationRequest', vi_user_id, vi_vr_id, err, response.statusCode, body);
 			if (err) {
 				notifications.notifyAdmin(`verifyinvestor api checkUserVerifyRequest: ${vi_user_id} ${vi_vr_id} err`, err);
 				return onDone(err);
