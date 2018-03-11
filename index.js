@@ -353,7 +353,7 @@ function handleTransactionsBecameStable(arrUnits) {
 						device.sendMessageToDevice(
 							row.device_address,
 							'text',
-							texts.paymentIsConfirmed() + '\n\n' + texts.clickInvestorLink(verifyInvestor.getAuthUrl('ua'+row.user_address))
+							texts.paymentIsConfirmed() + '\n\n' + texts.clickInvestorLink(verifyInvestor.getAuthUrl(`ua${row.user_address}_${row.device_address}`))
 						);
 					}
 				);
@@ -448,7 +448,7 @@ function respond (from_address, text, response = '') {
 							return device.sendMessageToDevice(
 								from_address,
 								'text',
-								(response ? response + '\n\n' : '') + texts.clickInvestorLink(verifyInvestor.getAuthUrl('ua'+row.user_address))
+								(response ? response + '\n\n' : '') + texts.clickInvestorLink(verifyInvestor.getAuthUrl(`ua${row.user_address}_${from_address}`))
 							);
 						}
 
