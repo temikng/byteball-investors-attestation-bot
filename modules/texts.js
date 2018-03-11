@@ -16,7 +16,7 @@ exports.greeting = () => {
 
 		'After payment, you will receive a link to VerifyInvestor service ',
 		'in order to allow the bot to receive an access to your account. ',
-		'and then receive verification request, that you need to complete.\n\n',
+		'And then, you will receive verification request, that you need to complete.\n\n',
 
 		`After you successfully attestation for the first time, `,
 		`you receive a $${conf.rewardInUSD.toLocaleString([], {minimumFractionDigits: 2})} reward in Bytes.`

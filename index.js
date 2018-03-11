@@ -302,7 +302,7 @@ function handleNewTransactions(arrUnits) {
 					db.query("UPDATE users SET user_address=NULL WHERE device_address=?", [row.device_address]);
 				}
 
-				checkPayment(row, (error, delay) => {
+				checkPayment((error, delay) => {
 					if (error) {
 						return db.query(
 							`INSERT ${db.getIgnore()} INTO rejected_payments
