@@ -9,7 +9,7 @@ const texts = require('./texts');
 function retryPostingAttestations() {
 	db.query(
 		`SELECT 
-			transaction_id, 
+			transaction_id, vi_user_id,
 			user_address
 		FROM attestation_units
 		JOIN transactions USING(transaction_id)
@@ -17,7 +17,7 @@ function retryPostingAttestations() {
 		WHERE attestation_unit IS NULL`,
 		(rows) => {
 			rows.forEach((row) => {
-				let	attestation = getAttestationPayload(row.user_address);
+				let	attestation = getAttestationPayload(row.user_address, row.vi_user_id);
 				// console.error('retryPostingAttestations: ' + row.transaction_id);
 				// console.error(attestation);
 				postAndWriteAttestation(row.transaction_id, exports.investorAttestorAddress, attestation);
