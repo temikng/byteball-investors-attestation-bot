@@ -45,8 +45,8 @@ exports.goingToAttestAddress = (address) => {
 	return `Thanks, going to attest your address: ${address}.`;
 };
 
-exports.pleasePay = (receivingAddress, price) => {
-	return `Please pay for the attestation: [attestation payment](byteball:${receivingAddress}?amount=${price}).`;
+exports.pleasePay = (receivingAddress, price, user_address) => {
+	return `Please pay for the attestation: [attestation payment](byteball:${receivingAddress}?amount=${price}&single_address=single${user_address}).`;
 };
 
 exports.receivedPaymentFromMultipleAddresses = () => {
@@ -54,15 +54,18 @@ exports.receivedPaymentFromMultipleAddresses = () => {
 };
 
 exports.receivedPaymentNotFromExpectedAddress = (address) => {
+	return `Received a payment but it was not sent from the expected address ${address}.`;
+};
+
+exports.switchToSingleAddress = () => {
 	return [
-		`Received a payment but it was not sent from the expected address ${address}.\n`,
 		"Make sure you are in a single-address wallet, ",
 		"otherwise switch to a single-address wallet or create one and send me your address before paying."
 	].join('');
 };
 
 exports.receivedYourPayment = (amount) => {
-	return `Received your payment of ${amount} Bytes, waiting for confirmation. It should take 5-15 minutes.`;
+	return `Received your payment of ${(amount/1e9)} GB, waiting for confirmation. It should take 5-10 minutes.`;
 };
 
 exports.paymentIsConfirmed = () => {

@@ -267,12 +267,47 @@ function handleNewTransactions(arrUnits) {
 		(rows) => {
 			rows.forEach((row) => {
 
+				function checkPayment(onDone) {
+					let delay = Math.round(Date.now()/1000 - row.price_ts);
+					let bLate = (delay > conf.PRICE_TIMEOUT);
+					if (row.asset !== null) {
+						return onDone("Received payment in wrong asset", delay);
+					}
+
+					let current_price = conversion.getPriceInBytes(conf.priceInUSD);
+					let expected_amount = bLate ? current_price : row.price;
+					if (row.amount < expected_amount) {
+						updatePrice(row.device_address, current_price);
+						let text = `Received ${(row.amount/1e9)} GB from you`;
+						text += bLate
+							? ".\nYour payment is too late and less than the current price."
+							: `, which is less than the expected ${(row.price/1e9)} GB.`;
+						return onDone(text + '\n\n' + texts.pleasePay(row.receiving_address, current_price, row.user_address), delay);
+					}
+
+					db.query("SELECT address FROM unit_authors WHERE unit=?", [row.unit], (author_rows) => {
+						if (author_rows.length !== 1) {
+							resetUserAddress();
+							return onDone(texts.receivedPaymentFromMultipleAddresses() + '\n' + texts.switchToSingleAddress());
+						}
+						if (author_rows[0].address !== row.user_address) {
+							resetUserAddress();
+							return onDone(texts.receivedPaymentNotFromExpectedAddress(row.user_address) + `\n` + texts.switchToSingleAddress());
+						}
+						onDone();
+					});
+				}
+
+				function resetUserAddress(){
+					db.query("UPDATE users SET user_address=NULL WHERE device_address=?", [row.device_address]);
+				}
+
 				checkPayment(row, (error, delay) => {
 					if (error) {
 						return db.query(
 							`INSERT ${db.getIgnore()} INTO rejected_payments
 							(receiving_address, price, received_amount, delay, payment_unit, error)
-							VALUES (?,?,?,?,?)`,
+							VALUES (?,?, ?,?, ?,?)`,
 							[row.receiving_address, row.price, row.amount, delay, row.unit, error],
 							() => {
 								device.sendMessageToDevice(row.device_address, 'text', error);
@@ -295,41 +330,6 @@ function handleNewTransactions(arrUnits) {
 			});
 		}
 	);
-}
-
-function checkPayment(row, onDone) {
-	let delay = Math.round(Date.now()/1000 - row.price_ts);
-	let bLate = (delay > conf.PRICE_TIMEOUT);
-	if (row.asset !== null) {
-		return onDone("Received payment in wrong asset", delay);
-	}
-
-	let current_price = conversion.getPriceInBytes(conf.priceInUSD);
-	let expected_amount = bLate ? current_price : row.price;
-	if (row.amount < expected_amount) {
-		updatePrice(row.device_address, current_price);
-		let text = `Received ${(row.amount/1e9)} GB from you`;
-		text += bLate
-			? ".\nYour payment is too late and less than the current price."
-			: `, which is less than the expected ${(row.price/1e9)} GB.`;
-		return onDone(text + '\n\n' + texts.pleasePay(row.receiving_address, current_price), delay);
-	}
-
-	db.query("SELECT address FROM unit_authors WHERE unit=?", [row.unit], (author_rows) => {
-		if (author_rows.length !== 1) {
-			return onDone(
-				texts.receivedPaymentFromMultipleAddresses() + '\n\n' + texts.pleasePay(row.receiving_address, row.price),
-				delay
-			);
-		}
-		if (author_rows[0].address !== row.user_address) {
-			return onDone(
-				texts.receivedPaymentNotFromExpectedAddress(row.user_address) + `\n\n` + texts.pleasePay(row.receiving_address, row.price),
-				delay
-			);
-		}
-		onDone();
-	});
 }
 
 function handleTransactionsBecameStable(arrUnits) {
@@ -401,7 +401,7 @@ function respond (from_address, text, response = '') {
 					return device.sendMessageToDevice(
 						from_address,
 						'text',
-						(response ? response + '\n\n' : '') + texts.pleasePay(receiving_address, price)
+						(response ? response + '\n\n' : '') + texts.pleasePay(receiving_address, price, userInfo.user_address)
 					);
 				}
 
@@ -425,7 +425,7 @@ function respond (from_address, text, response = '') {
 							return device.sendMessageToDevice(
 								from_address,
 								'text',
-								(response ? response + '\n\n' : '') + texts.pleasePay(receiving_address, price)
+								(response ? response + '\n\n' : '') + texts.pleasePay(receiving_address, price, userInfo.user_address)
 							);
 						}
 
