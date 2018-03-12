@@ -76,7 +76,7 @@ exports.missingProfileFields = (arrMissingFields) => {
 };
 
 exports.goingToAttestAddress = (address) => {
-	return `Thanks. ${conf.bRequireRealName?'Saved your and personal data.\n':''}Going to attest your address: ${address}.`;
+	return `Thanks. ${conf.bRequireRealName?'Saved your personal data.\n':''}Going to attest your address: ${address}.`;
 };
 
 exports.pleasePay = (receivingAddress, price, user_address) => {
