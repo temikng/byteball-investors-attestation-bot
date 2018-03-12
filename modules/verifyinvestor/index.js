@@ -6,9 +6,30 @@ const api = require('./api');
 const texts = require('./../texts.js');
 const notifications = require('./../notifications.js');
 
-exports.getAuthUrl = (identifier) => {
-	return conf.verifyInvestorUrl + api.getAuthUrn(identifier);
+exports.getAuthUrl = (identifier, objData = {}) => {
+	let strAuthUrlParams = getStrAuthUrlParams(objData);
+	return conf.verifyInvestorUrl + api.getAuthUrn(identifier) + (strAuthUrlParams ? '&' : '') + strAuthUrlParams;
 };
+
+function getStrAuthUrlParams(objData) {
+	let arrUrlParams = [];
+	if (conf.bRequireRealName) {
+		let objMap = conf.objMapRequiredVIPersonalDataWithProfile;
+		for (let key in objMap) {
+			if (!objMap.hasOwnProperty(key)) continue;
+			let path = objMap[key].path;
+			let value = path.reduce((prev, curr) => {
+				return prev ? prev[curr] : undefined;
+			}, objData);
+			if (!value) {
+				notifications.notifyAdmin('getStrAuthUrlParams', `required-fields: ${conf.arrRequiredPersonalData}, data: ${JSON.stringify(objData)}`)
+			} else {
+				arrUrlParams.push(`${key}=${value}`);
+			}
+		}
+	}
+	return arrUrlParams.join('&');
+}
 
 exports.getVerReqStatusDescription = (vi_vr_status) => {
 	switch (vi_vr_status) {

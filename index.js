@@ -1,9 +1,11 @@
 /*jslint node: true */
 'use strict';
+const _ = require('lodash');
 const constants = require('byteballcore/constants.js');
 const conf = require('byteballcore/conf');
 const db = require('byteballcore/db');
 const eventBus = require('byteballcore/event_bus');
+const privateProfile = require('byteballcore/private_profile');
 const validationUtils = require('byteballcore/validation_utils');
 const headlessWallet = require('headless-byteball');
 const texts = require('./modules/texts');
@@ -247,8 +249,9 @@ function moveFundsToAttestorAddresses() {
 						console.error('balance', balance);
 						notifications.notifyAdmin('failed to move funds', err + ", balance: " + JSON.stringify(balance));
 					});
-				} else
+				} else {
 					console.log("moved funds, unit " + unit);
+				}
 			});
 		}
 	);
@@ -344,13 +347,18 @@ function handleTransactionsBecameStable(arrUnits) {
 	db.query(
 		`SELECT 
 			transaction_id, 
-			device_address, user_address
+			device_address, user_address,
+			src_profile
 		FROM transactions
 		JOIN receiving_addresses USING(receiving_address)
+		LEFT JOIN private_profiles ON private_profiles.address = receiving_addresses.user_address 
 		WHERE payment_unit IN(?)`,
 		[arrUnits],
 		(rows) => {
 			rows.forEach((row) => {
+
+				checkUserScrProfileData(row, row.device_address);
+
 				db.query(
 					`UPDATE transactions 
 					SET confirmation_date=${db.getNow()}, is_confirmed=1, vi_status='in_authentication'
@@ -360,7 +368,8 @@ function handleTransactionsBecameStable(arrUnits) {
 						device.sendMessageToDevice(
 							row.device_address,
 							'text',
-							texts.paymentIsConfirmed() + '\n\n' + texts.clickInvestorLink(verifyInvestor.getAuthUrl(`ua${row.user_address}_${row.device_address}`))
+							texts.paymentIsConfirmed() + '\n\n' +
+							texts.clickInvestorLink(verifyInvestor.getAuthUrl(`ua${row.user_address}_${row.device_address}`, row.src_profile))
 						);
 					}
 				);
@@ -380,8 +389,9 @@ function respond (from_address, text, response = '') {
 	readUserInfo(from_address, (userInfo) => {
 
 		function checkUserAddress(onDone) {
-			if (validationUtils.isValidAddress(text)) {
-				userInfo.user_address = text;
+
+			function saveBBAddressToUser(address) {
+				userInfo.user_address = address;
 				response += texts.goingToAttestAddress(userInfo.user_address);
 				return db.query(
 					'UPDATE users SET user_address=? WHERE device_address=?',
@@ -391,6 +401,47 @@ function respond (from_address, text, response = '') {
 					}
 				);
 			}
+
+			let arrProfileMatches = text.match(/\(profile:(.+?)\)/);
+
+			if (validationUtils.isValidAddress(text)) {
+				if (conf.bRequireRealName) {
+					return onDone(texts.requireInsertProfileData());
+				}
+
+				return saveBBAddressToUser(text);
+			}
+			else if (arrProfileMatches) {
+				if (!conf.bRequireRealName) {
+					return onDone(texts.requireInsertBBAddress());
+				}
+
+				let privateProfileJsonBase64 = arrProfileMatches[1];
+				let objPrivateProfile = privateProfile.getPrivateProfileFromJsonBase64(privateProfileJsonBase64);
+				if (!objPrivateProfile) {
+					return onDone("Invalid private profile");
+				}
+
+				return privateProfile.parseAndValidatePrivateProfile(objPrivateProfile, (err, address, attestor_address) => {
+					if (err) {
+						return onDone("Failed to parse the private profile: " + err);
+					}
+
+					if (conf.arrRealNameAttestors.indexOf(attestor_address) === -1) {
+						return onDone(texts.wrongRealNameAttestorAddress(attestor_address));
+					}
+
+					let assocPrivateData = privateProfile.parseSrcProfile(objPrivateProfile.src_profile);
+					let arrMissingFields = _.difference(conf.arrRequiredPersonalData, Object.keys(assocPrivateData));
+					if (arrMissingFields.length > 0) {
+						return onDone(texts.missingProfileFields(arrMissingFields));
+					}
+
+					privateProfile.savePrivateProfile(objPrivateProfile, address, attestor_address);
+					saveBBAddressToUser(address);
+				});
+			}
+
 			if (userInfo.user_address) return onDone();
 			onDone(texts.insertMyAddress());
 		}
@@ -455,7 +506,8 @@ function respond (from_address, text, response = '') {
 							return device.sendMessageToDevice(
 								from_address,
 								'text',
-								(response ? response + '\n\n' : '') + texts.clickInvestorLink(verifyInvestor.getAuthUrl(`ua${row.user_address}_${from_address}`))
+								(response ? response + '\n\n' : '') +
+								texts.clickInvestorLink(verifyInvestor.getAuthUrl(`ua${row.user_address}_${from_address}`, userInfo.src_profile))
 							);
 						}
 
@@ -514,15 +566,44 @@ function updatePrice(receiving_address, price, cb) {
  * @param callback
  */
 function readUserInfo (device_address, callback) {
-	db.query('SELECT user_address FROM users WHERE device_address = ?', [device_address], (rows) => {
-		if (rows.length) {
-			callback(rows[0]);
-		} else {
-			db.query(`INSERT ${db.getIgnore()} INTO users (device_address) VALUES(?)`, [device_address], () => {
-				callback({ device_address, user_address: null });
-			});
+	db.query(
+		`SELECT 
+			user_address, src_profile
+		FROM users
+		LEFT JOIN private_profiles ON private_profiles.address = users.user_address 
+		WHERE device_address = ?`,
+		[device_address],
+		(rows) => {
+			if (rows.length) {
+				let row = rows[0];
+
+				checkUserScrProfileData(row, device_address);
+
+				callback(row);
+			} else {
+				db.query(`INSERT ${db.getIgnore()} INTO users (device_address) VALUES(?)`, [device_address], () => {
+					callback({ user_address: null, src_profile: {} });
+				});
+			}
 		}
-	});
+	);
+}
+
+function checkUserScrProfileData(row, device_address) {
+	if (!conf.bRequireRealName) {
+		row.src_profile = {};
+	} else {
+		if (!row.src_profile) {
+			row.src_profile = {};
+		} else {
+			try {
+				row.src_profile = JSON.parse(row.src_profile);
+			} catch (err) {
+				notifications.notifyAdmin('error parse src_profile', `device_address: ${device_address}, profile: ${row.src_profile}`);
+				row.src_profile = {};
+			}
+		}
+	}
 }
 
 /**

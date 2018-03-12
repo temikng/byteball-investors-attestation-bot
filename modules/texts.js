@@ -33,16 +33,50 @@ exports.weHaveReferralProgram = () => {
 };
 
 exports.insertMyAddress = () => {
+	if (conf.bRequireRealName) {
+		let arrNamesOfRequiredKeys = [];
+		let objMap = conf.objMapRequiredVIPersonalDataWithProfile;
+		for (let key in objMap) {
+			if (!objMap.hasOwnProperty(key)) continue;
+			arrNamesOfRequiredKeys.push(objMap[key].name);
+		}
+		return [
+			'To participate in this attestation, your real name has to be attested and we require to provide your private profile, ',
+			`which includes your: ${arrNamesOfRequiredKeys.join(', ')}.\n`,
+			'If you are not attested yet, find "Real name attestation bot" in the Bot Store and have your address attested.\n',
+			`If you are already attested, click this link to reveal your private profile to us: [profile request](profile-request:${conf.arrRequiredPersonalData.join(',')}). `,
+			'We\'ll keep your personal data private and only send it to VerifyInvestor service.'
+		].join('');
+	} else {
+		return [
+			"Please send me your address that you wish to attest (click ... and Insert my address).\n",
+			"Make sure you are in a single-address wallet. ",
+			"If you don't have a single-address wallet, ",
+			"please add one (burger menu, add wallet) and fund it with the amount sufficient to pay for the attestation."
+		].join('')
+	}
+};
+
+exports.requireInsertProfileData = () => {
+	return 'You have to provide your attested profile, just Byteball address is not enough.';
+};
+exports.requireInsertBBAddress = () => {
+	return 'Private profile is not required';
+};
+
+exports.wrongRealNameAttestorAddress = (attestor_address) => {
 	return [
-		"Please send me your address that you wish to attest (click ... and Insert my address).\n",
-		"Make sure you are in a single-address wallet. ",
-		"If you don't have a single-address wallet, ",
-		"please add one (burger menu, add wallet) and fund it with the amount sufficient to pay for the attestation."
+		`We don't recognize the attestor ${attestor_address} who attested your profile.\n`,
+		`The only trusted attestors are: ${conf.arrRealNameAttestors.join(', ')}`
 	].join('');
 };
 
+exports.missingProfileFields = (arrMissingFields) => {
+	return `These fields are missing in your profile: ${arrMissingFields.join(', ')}`
+};
+
 exports.goingToAttestAddress = (address) => {
-	return `Thanks, going to attest your address: ${address}.`;
+	return `Thanks. ${conf.bRequireRealName?'Saved your and personal data.\n':''}Going to attest your address: ${address}.`;
 };
 
 exports.pleasePay = (receivingAddress, price, user_address) => {
@@ -149,5 +183,5 @@ exports.errorConfigSalt = () => {
 };
 
 exports.errorConfigVerifyInvestorToken = () => {
-	return 'please specify verifyInvestorApiToken and verifyInvestorUserAuthorizationToken in your ${desktopApp.getAppDataDir()}/conf.json\n';
+	return `please specify verifyInvestorApiToken and verifyInvestorUserAuthorizationToken in your ${desktopApp.getAppDataDir()}/conf.json`;
 };

@@ -32,7 +32,7 @@ exports.bRunWitness = false;
 exports.THRESHOLD_DISTANCE = 20;
 exports.MIN_AVAILABLE_WITNESSINGS = 100;
 
-// verifiinvestor.com service
+// verifyinvestor.com service
 exports.verifyInvestorUrl = 'https://verifyinvestor.com';
 exports.verifyInvestorApiToken = '';
 exports.verifyInvestorUserAuthorizationToken = '';
@@ -43,6 +43,20 @@ exports.rewardInUSD = 20;
 exports.referralRewardInUSD = 20;
 
 exports.PRICE_TIMEOUT = 3600; // in seconds
+
+exports.bRequireRealName = true;
+exports.arrRealNameAttestors = ['I2ADHGP4HL6J37NQAD73J7E5SKFIXJOT'];
+exports.objMapRequiredVIPersonalDataWithProfile = { // match verify investor data with private profile data
+	'first_name': {
+		name: 'first name',
+		path: ['first_name',0]
+	},
+	'last_name': {
+		name: 'last name',
+		path: ['last_name',0]
+	}
+};
+exports.arrRequiredPersonalData = Object.keys(exports.objMapRequiredVerifyInvestorPersonalDataWithProfile);
 
 // server
 exports.webPort = 8080;
