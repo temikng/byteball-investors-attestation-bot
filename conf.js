@@ -56,7 +56,7 @@ exports.objMapRequiredVIPersonalDataWithProfile = { // match verify investor dat
 		path: ['last_name',0]
 	}
 };
-exports.arrRequiredPersonalData = Object.keys(exports.objMapRequiredVerifyInvestorPersonalDataWithProfile);
+exports.arrRequiredPersonalData = Object.keys(exports.objMapRequiredVIPersonalDataWithProfile);
 
 // server
 exports.webPort = 8080;
